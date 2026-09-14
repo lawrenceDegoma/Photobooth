@@ -1,0 +1,39 @@
+booth:
+  name: "Photo Booth"
+
+session:
+  photos_per_session: 4
+  countdown_seconds: 3
+  delay_between_photos_ms: 1000
+
+camera:
+  resolution_width: 4608
+  resolution_height: 2592
+  preview_width: 1280
+  preview_height: 720
+  autofocus: true
+
+display:
+  fullscreen: false
+  orientation: portrait
+  width: 720
+  height: 1280
+
+storage:
+  path: "photos"
+  minimum_free_space_mb: 1000
+
+sharing:
+  enabled: true
+  hostname: "0.0.0.0"
+  port: 8080
+
+hardware:
+  physical_button: false
+  button_gpio: 17
+
+logging:
+  path: "logs/photobooth.log"
+  level: "INFO"
+  max_bytes: 1000000
+  backup_count: 3

@@ -1,0 +1,10 @@
+# Raspberry Pi-only dependencies.
+#
+# These packages only build/install on Linux (Raspberry Pi OS) and are kept
+# out of pyproject.toml so `uv sync` works cleanly on any developer machine
+# (macOS/Windows/Linux) without trying to build Pi-specific native deps.
+#
+# On the Raspberry Pi itself, install these into the uv-managed venv with:
+#   uv pip install -r requirements-pi.txt
+gpiozero>=2.0.1
+picamera2>=0.3.12

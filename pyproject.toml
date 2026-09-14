@@ -1,0 +1,27 @@
+[project]
+name = "photobooth"
+version = "0.1.0"
+description = "Portable Raspberry Pi Photo Booth"
+requires-python = ">=3.9"
+dependencies = [
+    "PyQt6>=6.6.0",
+    "Pillow>=10.0.0",
+    "qrcode>=7.4.2",
+    "Flask>=3.0.0",
+    "PyYAML>=6.0.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
