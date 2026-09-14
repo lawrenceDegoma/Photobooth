@@ -2,6 +2,12 @@
 
 UI components, session manager, hardware, etc. can publish and subscribe
 to named events without holding direct references to each other.
+
+Note: publish() calls subscribers synchronously on whatever thread called
+publish(). Callers that publish from background threads (e.g. the session
+manager's countdown/capture worker) and have subscribers that touch Qt
+widgets must marshal onto the main thread themselves (see
+app.core.qt_utils.run_on_main_thread), since Qt widgets are not thread-safe.
 """
 from __future__ import annotations
 
