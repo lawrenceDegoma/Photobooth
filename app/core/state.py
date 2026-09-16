@@ -27,12 +27,14 @@ class BoothState(Enum):
     REVIEW = auto()
     SHARE = auto()
     ERROR = auto()
+    ADMIN = auto()
 
 
 # Map of allowed transitions: from_state -> set of valid to_states
 _ALLOWED_TRANSITIONS: dict[BoothState, set[BoothState]] = {
     BoothState.BOOTING: {BoothState.IDLE, BoothState.ERROR},
-    BoothState.IDLE: {BoothState.PREVIEW, BoothState.ERROR},
+    BoothState.IDLE: {BoothState.PREVIEW, BoothState.ERROR, BoothState.ADMIN},
+    BoothState.ADMIN: {BoothState.IDLE},
     BoothState.PREVIEW: {BoothState.COUNTDOWN, BoothState.IDLE, BoothState.ERROR},
     BoothState.COUNTDOWN: {BoothState.CAPTURE, BoothState.ERROR},
     BoothState.CAPTURE: {

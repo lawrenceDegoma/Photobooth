@@ -10,6 +10,7 @@ from PyQt6.QtGui import QCursor
 from PyQt6.QtWidgets import QStackedWidget
 
 from app.core.events import EventBus
+from app.ui.admin_screen import AdminScreen
 from app.ui.camera_screen import CameraScreen
 from app.ui.countdown_screen import CountdownScreen
 from app.ui.error_screen import ErrorScreen
@@ -22,20 +23,28 @@ logger = logging.getLogger(__name__)
 
 
 class MainWindow(QStackedWidget):
-    def __init__(self, booth_name: str, event_bus: EventBus, get_frame_callback, fullscreen: bool) -> None:
+    def __init__(
+        self,
+        booth_name: str,
+        event_bus: EventBus,
+        get_frame_callback,
+        fullscreen: bool,
+        admin_hold_seconds: float = 5.0,
+    ) -> None:
         super().__init__()
         self._events = event_bus
 
         self.setWindowTitle(booth_name)
         self.resize(720, 1280)
 
-        self.welcome_screen = WelcomeScreen(booth_name)
+        self.welcome_screen = WelcomeScreen(booth_name, admin_hold_seconds=admin_hold_seconds)
         self.camera_screen = CameraScreen(get_frame_callback)
         self.countdown_screen = CountdownScreen()
         self.processing_screen = ProcessingScreen()
         self.review_screen = ReviewScreen()
         self.share_screen = ShareScreen()
         self.error_screen = ErrorScreen()
+        self.admin_screen = AdminScreen()
 
         for screen in (
             self.welcome_screen,
@@ -45,11 +54,15 @@ class MainWindow(QStackedWidget):
             self.review_screen,
             self.share_screen,
             self.error_screen,
+            self.admin_screen,
         ):
             self.addWidget(screen)
 
         self.welcome_screen.start_requested.connect(
             lambda: self._events.publish("ui_start_requested")
+        )
+        self.welcome_screen.admin_requested.connect(
+            lambda: self._events.publish("ui_admin_requested")
         )
         self.camera_screen.take_photos_requested.connect(
             lambda: self._events.publish("ui_take_photos_requested")
@@ -65,6 +78,15 @@ class MainWindow(QStackedWidget):
         )
         self.error_screen.retry_requested.connect(
             lambda: self._events.publish("ui_retry_requested")
+        )
+        self.admin_screen.close_requested.connect(
+            lambda: self._events.publish("ui_admin_close_requested")
+        )
+        self.admin_screen.restart_app_requested.connect(
+            lambda: self._events.publish("ui_admin_restart_requested")
+        )
+        self.admin_screen.shutdown_requested.connect(
+            lambda: self._events.publish("ui_admin_shutdown_requested")
         )
 
         if fullscreen:
@@ -106,3 +128,16 @@ class MainWindow(QStackedWidget):
     def show_error(self, title: str, message: str) -> None:
         self.error_screen.show_error(title, message)
         self.setCurrentWidget(self.error_screen)
+
+    def show_admin(
+        self,
+        storage_text: str,
+        battery_text: str,
+        camera_text: str,
+        network_text: str,
+        session_count: int,
+    ) -> None:
+        self.admin_screen.update_status(
+            storage_text, battery_text, camera_text, network_text, session_count
+        )
+        self.setCurrentWidget(self.admin_screen)

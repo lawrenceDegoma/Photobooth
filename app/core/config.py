@@ -73,6 +73,25 @@ class LoggingConfig:
 
 
 @dataclass
+class ProcessingConfig:
+    template: str = "classic"
+    filter: str | None = None
+
+
+@dataclass
+class CleanupConfig:
+    enabled: bool = True
+    max_age_days: int = 30
+    run_on_startup: bool = True
+
+
+@dataclass
+class AdminConfig:
+    enabled: bool = True
+    hold_seconds: float = 5.0
+
+
+@dataclass
 class Config:
     booth: BoothConfig = field(default_factory=BoothConfig)
     session: SessionConfig = field(default_factory=SessionConfig)
@@ -82,6 +101,9 @@ class Config:
     sharing: SharingConfig = field(default_factory=SharingConfig)
     hardware: HardwareConfig = field(default_factory=HardwareConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
+    processing: ProcessingConfig = field(default_factory=ProcessingConfig)
+    cleanup: CleanupConfig = field(default_factory=CleanupConfig)
+    admin: AdminConfig = field(default_factory=AdminConfig)
 
     @classmethod
     def load(cls, path: str | Path | None = None) -> "Config":
@@ -100,4 +122,7 @@ class Config:
             sharing=SharingConfig(**data.get("sharing", {})),
             hardware=HardwareConfig(**data.get("hardware", {})),
             logging=LoggingConfig(**data.get("logging", {})),
+            processing=ProcessingConfig(**data.get("processing", {})),
+            cleanup=CleanupConfig(**data.get("cleanup", {})),
+            admin=AdminConfig(**data.get("admin", {})),
         )

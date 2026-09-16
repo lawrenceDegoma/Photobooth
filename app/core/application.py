@@ -22,6 +22,7 @@ from app.core.qt_utils import run_on_main_thread
 from app.core.state import BoothState, StateMachine
 from app.hardware.button import PhysicalButton
 from app.hardware.lighting import LightingService
+from app.hardware.power import PowerService
 from app.processing.image_processor import ImageProcessor
 from app.processing.photo_strip import PhotoStrip
 from app.session.session import PhotoSession
@@ -29,6 +30,7 @@ from app.session.session_manager import SessionManager
 from app.sharing.download_manager import DownloadManager, SharedSession
 from app.sharing.qr_service import QRService
 from app.sharing.server import SharingServer
+from app.storage.cleanup import remove_sessions_older_than
 from app.storage.storage_service import InsufficientStorageError, StorageService
 from app.ui.window import MainWindow
 
@@ -50,7 +52,7 @@ class PhotoBoothApp:
         self.camera_service = CameraService(self.config.camera)
         self.storage_service = StorageService(self.config.storage)
         self.image_processor = ImageProcessor()
-        self.photo_strip = PhotoStrip()
+        self.photo_strip = PhotoStrip(template_name=self.config.processing.template)
         self.qr_service = QRService()
         self.download_manager = DownloadManager()
         self.lighting = LightingService()
@@ -74,7 +76,12 @@ class PhotoBoothApp:
             event_bus=self.events,
             get_frame_callback=self.camera_service.get_preview_frame,
             fullscreen=self.config.display.fullscreen,
+            admin_hold_seconds=self.config.admin.hold_seconds,
         )
+
+        self.power_service = PowerService()
+        self._session_count = 0
+        self._pre_admin_state: BoothState = BoothState.IDLE
 
         self.physical_button: PhysicalButton | None = None
         if self.config.hardware.physical_button:
@@ -96,6 +103,11 @@ class PhotoBoothApp:
         self.events.subscribe("ui_keep_requested", self._on_keep_requested)
         self.events.subscribe("ui_finish_requested", self._on_finish_requested)
         self.events.subscribe("ui_retry_requested", self._on_retry_requested)
+
+        self.events.subscribe("ui_admin_requested", self._on_admin_requested)
+        self.events.subscribe("ui_admin_close_requested", self._on_admin_close_requested)
+        self.events.subscribe("ui_admin_restart_requested", self._on_admin_restart_requested)
+        self.events.subscribe("ui_admin_shutdown_requested", self._on_admin_shutdown_requested)
 
         # These are published from the SessionManager's background worker
         # thread, so their handlers (which touch Qt widgets) are marshaled
@@ -179,7 +191,9 @@ class PhotoBoothApp:
             processed_dir = self.storage_service.processed_dir(session)
             for i, photo_path in enumerate(session.photos, start=1):
                 out_path = str(processed_dir / f"{i:02d}.jpg")
-                self.image_processor.process(photo_path, out_path)
+                self.image_processor.process(
+                    photo_path, out_path, filter_name=self.config.processing.filter
+                )
                 session.add_processed_photo(out_path)
 
             strip_path = str(self.storage_service.strip_path(session))
@@ -191,6 +205,7 @@ class PhotoBoothApp:
             )
             session.strip_path = strip_path
 
+            self._session_count += 1
             self.state.transition(BoothState.REVIEW)
             self.window.show_review(strip_path)
         except InsufficientStorageError:
@@ -245,7 +260,61 @@ class PhotoBoothApp:
             self.window.show_welcome()
         self._inactivity_timer.stop()
 
+    # --- Admin mode --------------------------------------------------------
+
+    def _on_admin_requested(self) -> None:
+        if not self.config.admin.enabled:
+            return
+        if self.state.state != BoothState.IDLE:
+            return
+        self._pre_admin_state = self.state.state
+        self._inactivity_timer.stop()
+        self.state.transition(BoothState.ADMIN)
+
+        try:
+            free_mb = self.storage_service.free_space_mb()
+            storage_text = f"{free_mb:,.0f} MB free"
+        except Exception:
+            storage_text = "Unknown"
+
+        camera_text = "Connected" if self.camera_service.is_available() else "Unavailable"
+        network_text = "Sharing server running" if self.sharing_server is not None else "Disabled"
+        battery_text = "N/A"
+
+        self.window.show_admin(
+            storage_text, battery_text, camera_text, network_text, self._session_count
+        )
+
+    def _on_admin_close_requested(self) -> None:
+        if self.state.state != BoothState.ADMIN:
+            return
+        self.state.transition(BoothState.IDLE)
+        self.window.show_welcome()
+        self._inactivity_timer.start()
+
+    def _on_admin_restart_requested(self) -> None:
+        logger.info("Admin requested application restart")
+        self.qt_app.quit()
+
+    def _on_admin_shutdown_requested(self) -> None:
+        logger.info("Admin requested system shutdown")
+        try:
+            self.power_service.shutdown_system()
+        except Exception:
+            logger.exception("Failed to initiate system shutdown")
+        self.qt_app.quit()
+
     def run(self) -> int:
+        if self.config.cleanup.enabled and self.config.cleanup.run_on_startup:
+            try:
+                removed = remove_sessions_older_than(
+                    Path(self.config.storage.path), self.config.cleanup.max_age_days
+                )
+                if removed:
+                    logger.info("Cleanup removed %d old session(s) on startup", removed)
+            except Exception:
+                logger.exception("Startup cleanup failed")
+
         self.camera_service.initialize()
         self.camera_service.start_preview()
 

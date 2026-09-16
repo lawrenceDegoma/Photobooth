@@ -37,3 +37,19 @@ logging:
   level: "INFO"
   max_bytes: 1000000
   backup_count: 3
+
+processing:
+  # One of: classic, wedding, birthday, graduation, holiday
+  template: "classic"
+  # One of: null, grayscale, sepia, vivid, bw_high_contrast
+  filter: null
+
+cleanup:
+  enabled: true
+  max_age_days: 30
+  run_on_startup: true
+
+admin:
+  enabled: true
+  # Seconds to hold the booth logo on the Welcome screen to open Admin Mode.
+  hold_seconds: 5.0
