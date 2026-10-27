@@ -39,6 +39,31 @@ def test_processing_section_overrides(tmp_path):
     assert config.processing.filter == "sepia"
 
 
+def test_processing_enhancement_defaults_and_overrides(tmp_path):
+    defaults = Config.load(tmp_path / "missing.yaml").processing
+    assert defaults.auto_brightness is True
+    assert defaults.target_brightness == 118
+    assert defaults.max_brightness_gain == 1.5
+    assert defaults.saturation == 1.05
+    assert defaults.sharpness == 1.2
+
+    path = _write_yaml(
+        tmp_path,
+        """
+        processing:
+          auto_brightness: false
+          target_brightness: 130
+          saturation: 1.2
+        """,
+    )
+    config = Config.load(path)
+
+    assert config.processing.auto_brightness is False
+    assert config.processing.target_brightness == 130
+    assert config.processing.saturation == 1.2
+    assert config.processing.sharpness == 1.2
+
+
 def test_cleanup_section_overrides(tmp_path):
     path = _write_yaml(
         tmp_path,

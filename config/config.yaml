@@ -43,6 +43,14 @@ processing:
   template: "classic"
   # One of: null, grayscale, sepia, vivid, bw_high_contrast
   filter: null
+  # Scale brightness toward target_brightness (mean luminance, 0-255).
+  auto_brightness: true
+  target_brightness: 118
+  # Upper/lower limit on the correction factor (lower limit is 1/this value).
+  max_brightness_gain: 1.5
+  # 1.0 leaves the value unchanged.
+  saturation: 1.05
+  sharpness: 1.2
 
 cleanup:
   enabled: true

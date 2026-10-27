@@ -51,7 +51,14 @@ class PhotoBoothApp:
 
         self.camera_service = CameraService(self.config.camera)
         self.storage_service = StorageService(self.config.storage)
-        self.image_processor = ImageProcessor()
+        proc = self.config.processing
+        self.image_processor = ImageProcessor(
+            auto_brightness=proc.auto_brightness,
+            target_brightness=proc.target_brightness,
+            max_brightness_gain=proc.max_brightness_gain,
+            saturation=proc.saturation,
+            sharpness=proc.sharpness,
+        )
         self.photo_strip = PhotoStrip(template_name=self.config.processing.template)
         self.qr_service = QRService()
         self.download_manager = DownloadManager()

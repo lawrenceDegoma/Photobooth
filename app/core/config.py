@@ -76,6 +76,11 @@ class LoggingConfig:
 class ProcessingConfig:
     template: str = "classic"
     filter: str | None = None
+    auto_brightness: bool = True
+    target_brightness: int = 118  # 0-255 mean luminance to aim for
+    max_brightness_gain: float = 1.5  # clamp so correction never overdoes it
+    saturation: float = 1.05  # 1.0 = unchanged
+    sharpness: float = 1.2  # 1.0 = unchanged
 
 
 @dataclass
