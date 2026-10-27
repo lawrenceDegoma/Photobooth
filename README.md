@@ -76,9 +76,21 @@ Settings are read from `config/config.yaml`. Set `PHOTOBOOTH_CONFIG` to use a di
 | `sharing` | Enable server, hostname, port |
 | `hardware` | Physical button and GPIO pin |
 | `logging` | Log path, level, rotation size and backup count |
-| `processing` | Strip template (`classic`, `wedding`, `birthday`, `graduation`, `holiday`) and filter (`grayscale`, `sepia`, `vivid`, `bw_high_contrast`, or none) |
+| `processing` | Strip template (`classic`, `wedding`, `birthday`, `graduation`, `holiday`), filter (`grayscale`, `sepia`, `vivid`, `bw_high_contrast`, or none), and enhancement settings (see below) |
 | `cleanup` | Enable, maximum session age in days, run on startup |
 | `admin` | Enable, long-press duration in seconds |
+
+### Image processing
+
+Captures are saved as JPEG originals and never modified. Processed copies go through orientation correction, crop and resize to 1200x1600, auto brightness, autocontrast, saturation, sharpening, and the optional filter.
+
+| `processing` setting | Default | Meaning |
+| --- | --- | --- |
+| `auto_brightness` | `true` | Scale brightness toward `target_brightness` |
+| `target_brightness` | `118` | Target mean luminance, 0 to 255 |
+| `max_brightness_gain` | `1.5` | Limit on the correction factor; the lower limit is its inverse |
+| `saturation` | `1.05` | 1.0 leaves color unchanged |
+| `sharpness` | `1.2` | 1.0 leaves sharpness unchanged |
 
 ## Project layout
 
